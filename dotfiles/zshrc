@@ -1,0 +1,66 @@
+[ -z "$PS1" ] && return
+
+droot=~/unix-home
+
+function debug() {
+	COLOR_CYAN="\e[36m"
+	COLOR_RESET="\e[0m"
+	echo -e "$COLOR_CYAN > $@$COLOR_RESET"
+}
+
+# common files
+if [ -d "${droot}/common/" ]
+then
+	if [ -d "${droot}/common/init.d" ]
+	then
+		for file in $(find "${droot}/common/init.d" \( -name "*.sh" -o -name "*.zsh" \) )
+		do
+			debug "Loading ${file}"
+			source "${file}"
+		done
+	fi
+
+	if [ -d "${droot}/common/bin/" ]
+	then
+		PATH="$PATH:${droot}/common/bin/"
+	fi
+fi
+
+# by hostname
+hostname=$(hostname -s)
+if [ -d "${droot}/hostnames/${hostname}" ]
+then
+	if [ -d "${droot}/hostnames/${hostname}/init.d" ]
+	then
+		for file in $(find "${droot}/hostnames/${hostname}/init.d" \( -name "*.sh" -o -name "*.zsh" \) )
+		do
+			debug "Loading ${file}"
+			source "${file}"
+		done
+	fi
+
+	if [ -d ${droot}/hostnames/${hostname}/bin/ ]
+	then
+		PATH="$PATH:${droot}/hostnames/${hostname}/bin/"
+	fi
+fi
+
+# by platform
+platform=$(uname | awk '{print tolower($0)}')
+if [ -d "${droot}/platforms/${platform}" ]
+then
+	if [ -d "${droot}/platforms/${platform}/init.d" ]
+	then
+		for file in $(find "${droot}/platforms/${platform}/init.d" \( -name "*.sh" -o -name "*.zsh" \) )
+		do
+			debug "Loading ${file}"
+			source "${file}"
+		done
+	fi
+
+	if [ -d ${droot}/platforms/${platform}/bin/ ]
+	then
+		PATH="$PATH:${droot}/platforms/${platform}/bin/"
+	fi
+fi
+
