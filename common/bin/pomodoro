@@ -1,0 +1,57 @@
+#!/bin/bash
+
+if [ "$1" == "" ]
+then
+    TIMER=`expr 60 \* 25`
+else
+    TIMER=`expr 60 \* $1`
+fi
+
+if [ "$2" == "" ]
+then
+    BLOCK=""
+else
+    BLOCK=" B$2"
+fi
+
+if [ "$3" == "" ]
+then
+    TASK=""
+else
+    TASK=" $3"
+fi
+
+while [ $TIMER -ge 0 ]
+do
+    MIN=$(expr $TIMER / 60)
+    SEC=$(expr $TIMER % 60)
+
+    if [ "$SEC" -lt 10 ]
+    then
+        SEC=0$SEC
+    fi
+
+    clear
+    echo -n "$BLOCK $MIN:$SEC " #| tr 0123456789 OLZEASGTBP # FREAK MODE ON
+
+	if [ "$TASK" != "" ]
+	then
+		echo -n "- $TASK "
+	fi
+
+    TIMER=$(expr $TIMER - 1)
+    sleep 1
+done
+
+
+NOTIFICATIONS=5
+
+while [ $NOTIFICATIONS -gt 0 ]
+do
+    clear
+    echo -n "$BLOCK POMODORO DONE "
+
+	#notify-pablo "POMODORO DONE" "The block has finished. Please take a rest."
+	sleep 10
+done
+

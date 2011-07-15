@@ -1,0 +1,449 @@
+#!/bin/bash
+
+#   ------------------------------------------------------------------
+#
+#   Shell program to change tabs by spaces
+#
+#   Copyright 2008, Steve Francia <steve.francia+search_and_replace@gmail.com>.
+#   Modified by Ismael de Esteban <ismael@tuenti.com>
+#
+#   This program is free software; you can redistribute it and/or
+#   modify it under the terms of the GNU General Public License as
+#   published by the Free Software Foundation; either version 2 of the
+#   License, or (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   General Public License for more details.
+#
+#   Description:
+#
+#
+#   Usage:
+#
+#       tabs2spaces.sh [ -h | --help ] [PATH]
+#
+#   Options:
+#
+#       -h, --help   Display this help message and exit.
+#       --version    Display program version.
+#
+#   Arguments:
+#	PATH: Directory where the script will be applied recursively
+#
+#   External programs:
+#
+#       getopt   - parse command options (enhanced)
+#       mktemp   - make temporary filename (unique)
+#       sed      - stream editor
+#       basename - strip directory and suffix from filenames
+#
+#   Revision History:
+#
+#   2008-07-25      Initial Script Created
+#                   See ChangeLog for additional changes
+#   2009-10-22	    Change purpose to replace tabs by 4 spaces 
+#
+#
+#   ------------------------------------------------------------------
+
+##### Preamble #####
+
+#   ------------------------------------------------------------------
+#   Constants
+#   ------------------------------------------------------------------
+
+    declare -r PROGNAME=$(basename $0)
+    declare -r VERSION="0.3"
+    declare -r DESCRIPTION="a Shell program to expand tabs to 4 spaces on php or js files recursively."
+
+REGDIR='main$|main/core$|main/core/api|main/core/data|main/core/domain|main/core/helper
+                                        |maie"/core/general|tests$|tests/unit$|tests/unit/core'
+
+REGFILE='main/core/api|main/core/data|main/core/domain|main/core/helpers|main/core/general|tests/unit/core'
+
+# Use integer values from 0 to 1
+VERBOSE=1
+
+##### Functions #####
+
+#   ------------------------------------------------------------------
+#   Functions
+#   ------------------------------------------------------------------
+
+
+function clean_up() {
+
+#   ------------------------------------------------------------------
+#   Function to remove temporary files and other housekeeping
+#       No arguments
+#   ------------------------------------------------------------------
+
+    rm -f ${TEMP_FILE1}
+    return
+
+}   # end of clean_up
+
+
+function error_exit() {
+
+#   ------------------------------------------------------------------
+#   Function for exit due to fatal program error
+#       Arguments:
+#           1 (optional) string containing descriptive error message
+#   ------------------------------------------------------------------
+
+
+    echo "${PROGNAME}: ${1:-"Unknown Error"}" >&2
+    clean_up
+    exit 1
+
+}   # end of error_exit
+
+
+function graceful_exit() {
+
+#   ------------------------------------------------------------------
+#   Function called for a graceful exit
+#       No arguments
+#   ------------------------------------------------------------------
+
+    clean_up
+    exit
+
+}   # end of graceful_exit
+
+
+function signal_exit() {
+
+#   ------------------------------------------------------------------
+#   Function to handle termination signals
+#       Arguments:
+#           1 (optional) signal_spec
+#   ------------------------------------------------------------------
+
+    case $1 in
+        INT) 
+            echo "$PROGNAME: Program aborted by user" >&2
+            clean_up
+            exit
+            ;;
+        TERM)
+            echo "$PROGNAME: Program terminated" >&2
+            clean_up
+            exit
+            ;;
+        *)
+            error_exit "$PROGNAME: Terminating on unknown signal"
+            ;;
+            
+    esac
+
+}   # end of signal_exit
+
+
+function make_temp_files() {
+
+#   ------------------------------------------------------------------
+#   Function to create temporary files
+#       No arguments
+#   ------------------------------------------------------------------
+
+    # Use user's local tmp directory if it exists
+
+    if [ -d ~/tmp ]; then
+        TEMP_DIR=~/tmp
+    else
+        TEMP_DIR=/tmp
+    fi
+
+    # Temp file for this script, using paranoid method of creation to
+    # insure that file name is not predictable.  This is for security
+    # to avoid "tmp race" attacks.  If more files are needed, create
+    # using the same form.
+
+    TEMP_FILE1=$(mktemp -q "${TEMP_DIR}/${PROGNAME}.$$.XXXXXX")
+    if [ "$TEMP_FILE1" = "" ]; then
+        error_exit "cannot create temp file!"
+    fi
+
+}   # end of make_temp_files
+
+
+function usage() {
+
+#   ------------------------------------------------------------------
+#   Function to display usage message (does not exit)
+#       No arguments
+#   ------------------------------------------------------------------
+
+    echo "Usage: ${PROGNAME} [-h | --help] [PATH_Directory]"
+
+}   # end of usage
+
+
+function helptext() {
+
+#   ------------------------------------------------------------------
+#   Function to display help message for program
+#       No arguments
+#   ------------------------------------------------------------------
+
+    cat <<EOF
+
+    ${PROGNAME} ${VERSION}
+
+    This is a program to ${DESCRIPTION}.
+
+    $(usage)
+
+    Options:
+
+        -h, --help   	Display this help message and exit.
+         --version    	Display program version.
+
+    Arguments:
+
+        PATH   Directory where the script will be applied recursively
+		If this argument is not passed. The command will be applied
+		to the following directories in case they are accesible from the 
+		actual path: 
+			main/core/api
+     			main/core/data
+     			main/core/domain
+     			main/core/helpers
+     			main/core/general
+			tests/unit/core
+
+	Hints: PATH must be a directory, you cannot apply it to a file.
+	       Will only change .php or .js files
+    
+EOF
+
+}   # end of helptext
+
+ELEMENTS_TOTAL=0
+ELEMENTS_REPLACED=0
+ELEMENTS_ROW=0
+BYTES_SAVED=0
+
+function expTabs() {
+
+	expand -i -4 "$file" > $TEMP_FILE1
+
+    diff $TEMP_FILE1 "$file" > /dev/null
+    ARE_DIFFERENT="$?"
+
+    if [ $ARE_DIFFERENT -eq 0 ]
+    then
+        # just for displaying purposes
+        if [ "$VERBOSE" -eq 1 ]
+        then
+            echo -n "."
+        fi
+    else
+        BYTES_SAVED=$(expr $BYTES_SAVED + `du -b "$TEMP_FILE1" | cut -f1` - `du -b "$file" | cut -f1`)
+        mv $TEMP_FILE1 "$file"
+        ELEMENTS_REPLACED=$(expr $ELEMENTS_REPLACED + 1)
+
+        # just for displaying purposes
+        if [ "$VERBOSE" -eq 1 ]
+        then
+            echo -n "+"
+        fi
+    fi
+
+    ELEMENTS_TOTAL=$(expr $ELEMENTS_TOTAL + 1)
+    ELEMENTS_ROW=$(expr $ELEMENTS_ROW + 1)
+
+    # just for displaying purposes
+    if [ "$ELEMENTS_ROW" -eq 56 ]
+    then
+        echo "  $ELEMENTS_REPLACED / $ELEMENTS_TOTAL changed files ($BYTES_SAVED bytes saved)" # print a \n
+        ELEMENTS_ROW=0
+    fi
+
+    return
+
+}   # end of search_and_replace
+
+# Recursive Directory Traverser
+# Author: Kaz Kylheku
+# Date: Feb 27, 1999
+# Copyright 1999
+
+function recurse() {
+# Function parameter usage:
+# $1 directory to search
+# $2 pattern to search for
+# $3 command to execute
+# $4 secret argument for passing down path
+
+    if [ "$1" = "" ]; then 
+        error_exit "recurse: missing argument 1"
+    fi
+    if [ "$2" = "" ]; then 
+        error_exit "recurse: missing argument 2"
+    fi
+    if [ "$3" = "" ]; then 
+        error_exit "recurse: missing argument 3"
+    fi
+
+    local file
+    local path
+
+    if [ "$1" = "" ] ; then
+        path="${1%/}/"
+    else
+        path="$4$1/"
+    fi
+
+    if cd "$1" ; then
+        for file in $2; do
+	    if [ `pwd | egrep "$REGFILE" | wc -l` -ne 0 -o $NOARG -eq 0 ]; then
+                 if [ -f "$file" -o -d "$file" ]; then
+                     eval "$3"
+                 fi
+	    fi
+        done
+        for file in .* * ; do
+            if [ "$file" = "." -o "$file" = ".." ] ; then
+                continue
+            fi
+            if [ -d "$file" -a ! -L "$file" ]; then
+		if [ `pwd | egrep "$REGDIR" | grep -v ".svn" | wc -l` -ne 0 -o $NOARG -eq 0 -o "$file" = "main" ]; then
+			if [ "$file" !=  ".svn" ]; then
+
+                		recurse "$file" "$2" "$3" "$path"
+			fi
+		fi
+            fi
+        done
+        cd ..
+    fi
+}
+
+
+#   ------------------------------------------------------------------
+#   Program starts here
+#   ------------------------------------------------------------------
+
+##### Initialization And Setup #####
+
+## Set file creation mask so that all files are created with 600
+## permissions.
+##
+#umask 066
+
+# Trap TERM, HUP, and INT signals and properly exit
+
+trap "signal_exit TERM" TERM HUP
+trap "signal_exit INT"  INT
+
+## Create temporary file(s)
+#
+make_temp_files
+
+
+##### Command Line Processing #####
+
+ # if at least one argument is required...
+ if [ $# -eq 0 ]; then
+     echo "This is ${PROGNAME} ${VERSION}"
+     usage
+     echo "No arguments given. Applying to (only if accesible from the actual location):"
+     pw=`pwd`
+     dir=`find "$pw" -maxdepth 3 -type d -print | egrep "$REGDIR" | grep -v "\.svn"`
+     for node in ${dir}; do
+	echo "${node}"
+     done
+     echo "---------------------------"
+     echo "Do you want to continue y/n "
+     read choice
+echo
+
+    case $choice in
+         y)
+         NOARG=1
+	 recurse "." "*.php" "expTabs"
+	 recurse "." "*.js" "expTabs"
+         ;;
+         n)
+         clean_up
+         exit 1
+         ;;
+         *)
+         echo "That is not a valid choice."
+         ;;
+   esac
+
+   graceful_exit
+ fi
+NOARG=0
+# Note that we use `"$@"' to let each command-line parameter expand to
+# a separate word. The quotes around `$@' are essential! We need
+# GETOPT_TEMP as the `eval set --' would nuke the return value of
+# getopt.
+GETOPT_TEMP=$(getopt -o +te:h --long test,extension:,help,version -n "$PROGNAME" -- "$@")
+
+if [ $? != 0 ] ; then
+    error_exit "Error parsing command line. Terminating..."
+fi
+
+# Note the quotes around `$GETOPT_TEMP': they are essential!
+eval set -- "$GETOPT_TEMP"
+
+# no error checking necessary; sanity of command line and required
+# arguments has been checked by getopt program
+
+ext="*";
+testmode=0;
+
+while true ; do
+    case $1 in
+        -h|--help)
+            helptext ;
+            graceful_exit
+            ;;
+        --version)
+            echo "${PROGNAME} ${VERSION}" ;
+            shift
+            ;;
+        --)
+            shift ;
+            break
+            ;;
+        *)
+            # should be impossible to reach: getopt should have caught
+            # an error
+            error_exit "This should not have happened; unknown option '$1'. Terminating..."
+            ;;
+    esac
+done
+unset GETOPT_TEMP
+
+# processing remaining arguments for the client
+#if [ $# -ne 0  ]; then
+#    echo "Searching for: $@"
+#fi
+
+
+##### Main Logic #####
+
+recurse $1 "*.php" "expTabs"
+recurse $1 "*.js" "expTabs"
+
+if [ "$VERBOSE" -eq 1 ]
+then
+    echo ""
+    echo ""
+    echo "Total files: $ELEMENTS_TOTAL"
+    echo "Total changed files: $ELEMENTS_REPLACED"
+    echo "Total bytes saved: $BYTES_SAVED"
+    echo ""
+fi
+
+graceful_exit
+
+# end of search_and_replace.sh

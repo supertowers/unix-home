@@ -1,0 +1,27 @@
+#!/bin/sh
+
+if [ "$2" == "" ]
+then
+	echo "Usage: $0 string length"
+	exit 1
+fi
+
+STRING=$1
+EXPECTED_LENGTH=$2
+
+STRING_LENGTH=${#1}
+
+if [ $STRING_LENGTH -gt $EXPECTED_LENGTH ]
+then
+	echo -e -n ${STRING:0:$EXPECTED_LENGTH}
+else
+	REMAINING_SPACES=$(expr $EXPECTED_LENGTH - $STRING_LENGTH)
+	while [ $REMAINING_SPACES -gt 0 ]
+	do
+		echo -n " "
+		let REMAINING_SPACES=$REMAINING_SPACES-1
+	done
+
+	echo -e -n $STRING
+fi
+

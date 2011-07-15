@@ -1,0 +1,102 @@
+#!/bin/sh
+
+STASH_NAME=$(echo -n "$1" | sed 's/[^a-zA-Z0-9_-]//g')
+STASH_DIRECTORY="$STASH_PATH/$STASH_NAME"
+STASH_INFO_FILENAME=$STASH_DIRECTORY/info.txt
+STASH_STATUS_FILENAME=$STASH_DIRECTORY/status.txt
+STASH_DIFF_FILENAME=$STASH_DIRECTORY/patch.diff
+STASH_FILES_DIRECTORY=$STASH_DIRECTORY/files
+
+if [ "$STASH_PATH" == "" -o ! -d "$STASH_PATH" ]
+then
+	echo 'Please define a valid path in the environment variable STASH_PATH.'
+	exit 1;
+fi
+
+if [ "$STASH_NAME" == "" ]
+then
+	echo 'Please provide a name for the stash'
+	exit 1;
+fi
+
+if [ -d "$STASH_DIRECTORY" ]
+then
+	echo "Stash name '$STASH_NAME' does exist already."
+	exit 1;
+fi
+
+# check if needed
+if [ $(svn st | wc -l) -eq 0 ]
+then
+	echo "Nothing to stash to '$STASH_NAME'.";
+	exit 0;
+fi
+
+VERBOSE=
+
+mkdir $STASH_DIRECTORY
+
+( echo -n $(svn info | egrep ^URL | sed 's/^URL: //g'); echo -n "@"; echo -n $(svn info | egrep ^Revision | sed 's/^Revision: //g') ) > $STASH_INFO_FILENAME
+( svn status ) | tee $STASH_STATUS_FILENAME | while read LINE
+do
+	FILE_STATUS=${LINE%% *};
+	FILE_NAME=${LINE##* };
+
+	case $FILE_STATUS in
+		"?" )
+			[ $VERBOSE ] && echo "Non tracked: $FILE_NAME"
+
+			# ADD IT TO THE STASH
+			DIR_NAME=$(dirname $FILE_NAME)
+			if [ ! -d "$STASH_FILES_DIRECTORY/$DIR_NAME" ]
+			then
+				mkdir -p "$STASH_FILES_DIRECTORY/$DIR_NAME"
+			fi
+			cp $FILE_NAME "$STASH_FILES_DIRECTORY/$FILE_NAME"
+
+			;;
+		"!" )
+			[ $VERBOSE ] && echo "Missing file in the working copy: $FILE_NAME"
+			;;
+		"A" )
+			echo "Added: $FILE_NAME"
+
+			# ADD IT TO THE STASH
+			DIR_NAME=$(dirname $FILE_NAME)
+			if [ ! -d "$STASH_FILES_DIRECTORY/$DIR_NAME" ]
+			then
+				mkdir -p "$STASH_FILES_DIRECTORY/$DIR_NAME"
+			fi
+			cp $FILE_NAME "$STASH_FILES_DIRECTORY/$FILE_NAME"
+
+			;;
+		"M" )
+			[ $VERBOSE ] && echo "Modified: $FILE_NAME"
+			;;
+		"D" )
+			[ $VERBOSE ] && echo "Deleted: $FILE_NAME"
+			;;
+		"C" )
+			echo "Conflict detected in file: $FILE_NAME"
+			echo "PLEASE RESOLVE IT BEFORE STASHING"
+
+			echo "Execute: "; echo rm -R $STASH_DIRECTORY
+			exit 1
+			;;
+		* )
+			echo "UNKNOWN STATUS: $FILE_STATUS"
+
+			echo "Execute: "; echo rm -R $STASH_DIRECTORY
+			exit 1
+			;;
+	esac
+
+	[ $VERBOSE ] || echo -n ${FILE_STATUS,,}
+
+done
+
+[ $VERBOSE ] || echo ""
+
+# tracking modifications
+( svn diff --diff-cmd diff ) > $STASH_DIFF_FILENAME
+

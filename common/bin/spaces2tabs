@@ -1,0 +1,22 @@
+#!/bin/sh
+
+FILE="$1"
+TMP_DIR="/tmp"
+
+
+TMP_FILE=$TMP_DIR/file.$RANDOM.$RANDOM.$RANDOM.swp
+
+for i in {1..100}
+do
+	sed "s/^(\t*)    /$1\t/g" $FILE > $TMP_FILE
+
+	if [ "$?" -eq 0 ]
+	then
+		if [ "$(wc -l $TMP_FILE)" -eq "$(wc -l $FILE)" ]
+		then
+			echo +OK
+		fi
+	else
+		echo +ERROR
+	fi
+done

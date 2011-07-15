@@ -1,0 +1,10 @@
+#!/bin/sh
+
+FILENAME="$*"
+
+if [ -f "$FILENAME" ]
+then
+    echo $(cat "$FILENAME" | md5)\;$(du "$FILENAME")\;$FILENAME >> ~/catalog.txt
+fi
+
+

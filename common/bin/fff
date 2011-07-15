@@ -1,0 +1,15 @@
+#!/bin/bash
+
+TEXT=$1
+
+shift
+
+if [ "$1" == "" ]
+then
+    FILES="."
+else
+    FILES="$*"
+fi
+
+egrep -l -H --exclude-dir="\.hg" --exclude="tags" -nri "$TEXT" $FILES;
+

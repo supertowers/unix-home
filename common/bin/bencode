@@ -1,0 +1,95 @@
+#!/usr/bin/php
+<?php
+
+// base
+if (isset($argv[1]) && is_numeric($argv[1])) {
+    $base = $argv[1];
+}
+else { $base = 16; }
+if ($base <= 1) { $base = 16; }
+
+# default config
+$defaultConfig = array(
+    '2' => array(
+        'elements' => 10,
+        'zeros'    => 8,
+        'width'    => 10,
+    ),
+    '8' => array(
+        'elements' => 20,
+        'zeros'    => 3,
+        'width'    => 4,
+    ),
+    '10' => array(
+        'elements' => 20,
+        'zeros'    => 0,
+        'width'    => 4,
+    ),
+    '16' => array(
+        'elements' => 40,
+        'zeros'    => 2,
+        'width'    => 4,
+    ),
+    '0' => array(
+        'elements' => 8,
+        'zeros'    => 4,
+        'width'    => 8,
+    ),
+);
+
+
+if (in_array($base, array(2, 8, 10, 16)))
+{
+    $selectedConfig = $base;
+}
+else
+{
+    $selectedConfig = 0;
+}
+
+$elementsPerRow  = $defaultConfig[$selectedConfig]['elements'];
+$zerosPerElement = $defaultConfig[$selectedConfig]['zeros'];
+$widthColumn     = $defaultConfig[$selectedConfig]['width'];
+
+// elements per row
+if (isset($argv[2]) && is_numeric($argv[2])) {
+    $elementsPerRow = $argv[2];
+}
+
+// zeros per element
+if (isset($argv[3]) && is_numeric($argv[3])) {
+    $zerosPerElement = $argv[3];
+}
+
+// width column
+if (isset($argv[4]) && is_numeric($argv[4])) {
+    $widthColumn = $argv[4];
+}
+
+
+$pos = 1;
+while ($char = fgetc(STDIN)) {
+
+    $number = Converter::encode($char, $base, $zerosPerElement);
+    
+    print str_repeat(' ', max(1, $widthColumn - max($zerosPerElement, strlen($number)))) . $number;
+
+    if ($elementsPerRow > 0 && $pos++ % $elementsPerRow == 0) {
+        print "\n";
+    }
+}
+print "\n";
+
+
+class Converter
+{
+    public static function encode($char, $base = 16, $zerosPerElement = 4)
+    {
+        $number = base_convert(ord($char), 10, $base);
+        return str_repeat('0', max(0, $zerosPerElement - strlen((string) $number))) . $number;
+    }
+    public static function decode($number, $base = 16)
+    {
+        return chr(base_convert($number, $base, 10));
+    }
+}

@@ -1,0 +1,2 @@
+#!/bin/bash
+find . | egrep '\.(php|js)$' | xargs -P6 -L1 -IXXX sh -c ' egrep "^    " XXX > /dev/null && ( unexpand --tabs=4 --first-only XXX | tee XXX.new > /dev/null; mv XXX.new XXX; echo -n . ) '

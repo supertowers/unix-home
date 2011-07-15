@@ -1,0 +1,76 @@
+#!/usr/bin/php
+<?php
+
+array_shift($argv);
+
+foreach ($argv as $arg)
+{
+    catalog_recursive($arg);
+}
+
+/**
+ * catalog_recursive 
+ * 
+ * @param string $element 
+ * @access public
+ * @return string|NULL
+ */
+function catalog_recursive($element, $context = '') {
+
+    $wholePath = $context . $element;
+
+    if (! file_exists($wholePath))
+    {
+        $errorMessage = "Element '$wholePath' does not exists.";
+        trigger_error($errorMessage, E_USER_NOTICE);
+        return NULL;
+    }
+
+    if (! is_readable($wholePath))
+    {
+        $errorMessage = "Element '$wholePath' does not exists.";
+        trigger_error($errorMessage, E_USER_NOTICE);
+        return NULL;
+    }
+
+    if (is_dir($wholePath))
+    {
+        // catalog directory
+        $hashes = array();
+        $resource = opendir($wholePath);
+        $childContext = $wholePath . '/';
+        while ($child = readdir($resource))
+        {
+            if ($child !== '..' && $child !== '.') 
+            {
+                $hashes[] = catalog_recursive($child, $childContext);
+            }
+        }
+        closedir($resource);
+
+        $hashesString = implode(';', $hashes);
+
+        $md5 = md5($hashesString);
+        $sha1 = sha1($hashesString);
+    }
+    else
+    {
+        // catalog specific file
+        $resource = readfile($wholePath);
+        $filesize = count($dataFile);
+        $md5 = md5($dataFile);
+        $sha1 = sha1($dataFile);
+
+        print "\n";
+        print ">>>>>>>>>>>>>>>>>>>>\n";
+        print "Path: $wholePath\n";
+        print "Size: $filesize\n";
+        print "\n";
+        print "MD5:  $md5\n";
+        print "SHA1: $sha1\n";
+        print "<<<<<<<<<<<<<<<<<<<<\n";
+        print "\n";
+
+    }
+    return "$md5:$sha1";
+}

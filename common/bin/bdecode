@@ -1,0 +1,30 @@
+#!/usr/bin/php
+<?php
+
+// base
+if (isset($argv[1]) && is_numeric($argv[1])) {
+    $base = $argv[1];
+}
+else { $base = 16; }
+if ($base <= 1) { $base = 16; }
+
+while ($numbers = fgets(STDIN, 4092)) 
+{
+    foreach (split(' ', $numbers) as $number) 
+    {
+        print Converter::decode($number, $base);
+    }
+}
+
+class Converter
+{
+    public static function encode($char, $base = 16, $zerosPerElement = 4)
+    {
+        $number = base_convert(ord($char), 10, $base);
+        return str_repeat('0', max(0, $zerosPerElement - strlen((string) $number))) . $number;
+    }
+    public static function decode($number, $base = 16)
+    {
+        return chr(base_convert($number, $base, 10));
+    }
+}

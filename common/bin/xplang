@@ -1,0 +1,188 @@
+#!/usr/bin/php
+<?php
+/**
+ * Xplang. Converter between bases. (New coding system: Fast Programming)
+ * 
+ * @package general
+ * @subpackage 
+ * @copyright 
+ * @author Pablo Lopez Torres <pablolopeztorres@gmail.com> 
+ * @license 
+ */
+
+
+array_shift($argv); // remove the command name
+
+return parser($argv);
+
+function parser($data)
+{
+    // save converter to know what we want
+    $convertTo = current($data);
+
+    # a - ascii
+    # b - binary
+    # o - octal
+    # d - decimal
+    # h - hexadecimal
+
+    $converters = array('a', 'b', 'o', 'd', 'h');
+
+    if (! in_array($convertTo, $converters))
+    {
+        print "ERROR: Converter not recognized :: $convertTo\n";
+        print "  + Use one of the allowed ones: (" . implode(', ', $converters) . ")\n";
+        return -1;
+    }
+
+    $isError = FALSE;
+    $output = "";
+    while (next($data) && ! $isError)
+    {
+        $datum = current($data);
+
+        if (in_array($datum, $converters))
+        {
+            $mode = $datum;
+        }
+        else
+        {
+            if (! isset($mode))
+            {
+                print "ERROR: Base not defined.\n";
+                print "  +  Please provide a base in the second argument.\n";
+                break; // exit the while
+            }
+
+            switch ($mode)
+            {
+                case 'a':
+                    $output .= $datum;
+                    break;
+                case 'b':
+                    $output .= parse_binary($datum);
+                    break;
+                case 'o':
+                    $output .= parse_octal($datum);
+                    break;
+                case 'd':
+                    $output .= parse_decimal($datum);
+                    break;
+                case 'h':
+                    $output .= parse_hexadecimal($datum);
+                    break;
+                default:
+                    print "ERROR: UNKNOWN ERROR.\n";
+                    $isError = TRUE;
+                    break;
+            }
+        }
+    }
+
+    if (! $isError)
+    {
+        switch ($convertTo)
+        {
+            case 'a':
+                print $output;
+                break;
+            case 'b':
+                foreach (str_split($output) as $letter)
+                {
+                    print encode_binary($letter) . " ";
+                }
+                break;
+            case 'o':
+                foreach (str_split($output) as $letter)
+                {
+                    print encode_octal($letter) . " ";
+                }
+                break;
+            case 'd':
+                foreach (str_split($output) as $letter)
+                {
+                    print encode_decimal($letter) . " ";
+                }
+                break;
+            case 'h':
+                foreach (str_split($output) as $letter)
+                {
+                    print encode_hexadecimal($letter) . " ";
+                }
+                break;
+        }
+    }
+}
+
+
+
+function parse_binary($datum)
+{
+    if (! preg_match('/^[01]+$/', $datum))
+    {
+        print "ERROR: Error parsing binary data :: $datum\n";
+        exit(1);
+    }
+
+    $datum = bindec($datum);
+    return parse_decimal($datum);
+}
+function parse_octal($datum)
+{
+    if (! preg_match('/^[0-7]+$/', $datum))
+    {
+        print "ERROR: Error parsing octal data :: $datum\n";
+        exit(1);
+    }
+
+    $datum = octdec($datum);
+    return parse_decimal($datum);
+}
+function parse_hexadecimal($datum)
+{
+    if (! preg_match('/^[0-9a-fA-F]+$/', $datum))
+    {
+        print "ERROR: Error parsing hexadecimal data :: $datum\n";
+        exit(1);
+    }
+
+    $datum = hexdec($datum);
+    return parse_decimal($datum);
+}
+function parse_decimal($datum)
+{
+    if (! preg_match('/^[0-9]+$/', $datum))
+    {
+        print "ERROR: Error parsing decimal data :: $datum\n";
+        exit(1);
+    }
+
+    $data = '';
+    do {
+        $chunkie = $datum % 256;
+        $datum = floor($datum / 256);
+        $data = chr($chunkie) . $data;
+    } while ($datum > 0);
+
+    return $data;
+}
+
+function encode_binary($byte)
+{
+    $output = decbin(ord($byte));
+    return str_repeat('0', 8 - strlen($output)) . $output;
+}
+function encode_octal($byte)
+{
+    $output = decoct(ord($byte));
+    return str_repeat('0', 3 - strlen($output)) . $output;
+}
+function encode_decimal($byte)
+{
+    return ord($byte);
+}
+function encode_hexadecimal($byte)
+{
+    $output = dechex(ord($byte));
+    return str_repeat('0', 2 - strlen($output)) . $output;
+}

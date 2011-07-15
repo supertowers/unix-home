@@ -1,0 +1,1 @@
+hg st -man | xargs -L1 php -l
