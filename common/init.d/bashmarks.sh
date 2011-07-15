@@ -1,5 +1,5 @@
 # Copyright (c) 2010, Huy Nguyen, http://www.huyng.com
-# Modified by Pablo Lopez Torres <pablo@redcore.es>
+# Modified by Pablo Lopez Torres <pablolopeztorres@gmail.com>
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided 
