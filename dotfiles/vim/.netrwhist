@@ -1,0 +1,9 @@
+let g:netrw_dirhistmax  =10
+let g:netrw_dirhist_cnt =7
+let g:netrw_dirhist_1='/home/pablo/.vim'
+let g:netrw_dirhist_2='/home/pablo/.unix_home'
+let g:netrw_dirhist_3='/home/pablo/.unix_home/.vim'
+let g:netrw_dirhist_4='/srv/svn/pablo/.unix_home/.vim'
+let g:netrw_dirhist_5='/home/pablo/unix-home/files'
+let g:netrw_dirhist_6='/Users/pablo/unix-home/files/.bash.d'
+let g:netrw_dirhist_7='/Users/pablo/unix-home/wiki/notes'

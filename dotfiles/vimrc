@@ -1,0 +1,150 @@
+
+syntax enable
+
+set nocompatible
+
+set background=dark
+colorscheme koehler
+
+" Smart search
+set ignorecase
+set smartcase
+
+set ruler
+
+set enc=utf-8
+
+set tabstop=4
+set shiftwidth=4
+
+" Use this for SPACES indentation
+"set expandtab
+
+" Use this for TABS indentation
+set noexpandtab
+
+set diffopt=vertical,filler,iwhite
+set nowrap
+
+set foldmethod=marker
+set foldcolumn=4
+
+set smarttab
+
+set number
+
+" START PYTHON SECTION
+" Python tags
+" set tags+=$HOME/.vim/tags/python.ctags
+" set tags+=$HOME/.vim/tags/php.ctags
+
+set tags=$PWD/tags
+
+filetype plugin indent on
+
+" Filetype: python
+autocmd FileType python set omnifunc=pythoncomplete#Complete
+autocmd FileType python source ~/.vim/after/ftplugin/python_snippets.vim
+
+" Filetype: php
+au BufRead,BufNewFile *.thtml set filetype=php
+au BufRead,BufNewFile *.ctp set filetype=php
+au BufRead,BufNewFile *.htp set filetype=php
+au BufRead,BufNewFile *.html set filetype=php
+
+autocmd FileType php set omnifunc=phpcomplete#CompletePHP
+autocmd FileType php source ~/.vim/after/ftplugin/php_snippets.vim
+autocmd FileType php EnableFastPHPFolds
+
+" Filetype: xt (xdebug trace)
+augroup filetypedetect
+au BufNewFile,BufRead *.xt  setf xt
+augroup END
+
+" Filetype: viki
+au BufRead,BufNewFile *.viki set filetype=viki
+
+" Mappings
+let mapleader = ','
+let maplocalleader = ','
+
+" Map use of the tags to Ctrl+LEFT and Ctrl+RIGHT
+map <silent><C-Left> <C-T>
+map <silent><C-j> <C-T>
+map <silent><C-Right> <C-]>
+map <silent><C-k> <C-]>
+" map <C-S-k> :tab split<CR>:exec("tag ".expand("<cword>"))<CR>
+
+" Clear highlighted selections
+map <silent><C-h> :let @/ = ""<CR>
+
+" Show / Hide taglists
+map <silent><C-n> :TlistToggle<CR>
+
+" Map Ctrl+SPACE to code completion
+inoremap <Nul> <C-x><C-o>
+
+map <silent><c-p> <ESC>:set paste<CR>:PhpDoc()<CR>:set nopaste<CR><ESC>
+
+map      <C-P> <ESC>:call PhpDocRange()<CR>
+inoremap <C-P> <ESC>:call PhpDocSingle()<CR>i
+nnoremap <C-P> :call PhpDocSingle()<CR>
+vnoremap <C-P> :call PhpDocRange()<CR>
+
+" autocmd BufWritePost,FileWritePost * silent! !echo `date` - <afile> | nc 10.0.0.50 9999 -q 1
+" autocmd BufWritePost,FileWritePost *.php silent! !phoenix file index <afile> 2>&1 > /dev/null
+
+" Search options
+set hlsearch
+set incsearch
+
+set mouse=a
+
+" PHP Debug settigs
+let g:debuggerPort = 10000
+
+set scrolloff=5
+
+set makeprg=php\ -l\ %
+set errorformat+=%m\ in\ %f\ on\ line\ %l
+
+" PHPDOC VALUES
+let g:pdv_cfg_Type = "mixed"
+let g:pdv_cfg_Package = "general"
+let g:pdv_cfg_SubPackage = ""
+let g:pdv_cfg_Version = "$id$"
+let g:pdv_cfg_Author = $EDITOR_AUTHOR
+let g:pdv_cfg_Copyright = $EDITOR_COPYRIGHT
+let g:pdv_cfg_License = $EDITOR_LICENSE
+let g:snip_start_tag = "({"
+let g:snip_end_tag = "})"
+
+" DirDiff
+let g:DirDiffDynamicDiffText = 1
+
+" My location-list file searching preferences
+set grepprg=ff
+" command -nargs=1 Grep lgrep '<args>'|lopen|lrewind
+" command -nargs=1 Grepword lgrep '\<<args>\>'|lopen|lrewind
+map \\ *:lgrep '\<<cword>\>'<CR>:lopen<CR>:lrewind<CR>n
+map \. :lgrep '@todo pablo'<CR>:lopen<CR>:lrewind<CR>n
+"map =] :lnext<CR>
+"map =[ :lprevious<CR>
+"map =} :lnfile<CR>
+"map ={ :lpfile<CR>
+"map =_ :ll<CR>
+"map =^ :lrewind<CR>
+"map =$ :llast<CR>
+"map =o :lopen<CR>
+"map =c :lclose<CR>
+
+set list listchars=tab:→\ ,trail:·
+
+" syntastic
+set statusline+=%#warningmsg#
+set statusline+=%{SyntasticStatuslineFlag()}
+set statusline+=%*
+
+let g:syntastic_enable_signs=1
+let g:syntastic_auto_loc_list=1
+
