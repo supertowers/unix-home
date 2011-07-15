@@ -1,0 +1,8 @@
+
+# use Ctrl-Space for the escape command
+escape ^@@
+
+# caption always "%{kB}%?%-Lw%?%{bw}%n*%f %t%?(%u)%?%{kB}%?%+Lw%?"
+# hardstatus alwayslastline "%{BW}%16=%l %{BW}%50=%d/%m/%Y %{BW}%80=%c%="
+caption    always         "%{+b rk}%H%{gk} |%c %{yk}%d.%m.%Y | %72=Load: %l %{wk}"
+hardstatus alwayslastline "%?%{+b .w}%-Lw%?%{+b kr}%n%f %t%?(%u)%?%{-}%?%{+b .w}%+Lw%?"
