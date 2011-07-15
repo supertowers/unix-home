@@ -1,0 +1,6 @@
+.hg
+wiki/html/*.html
+wiki/html/notesList.js
+dotfiles/ssh
+hostnames/bangkok
+hostnames/pinto
