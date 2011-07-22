@@ -1,6 +1,6 @@
-if !exists('loaded_snippet') || &cp
-    finish
-endif
+" if !exists('loaded_snippet') || &cp
+"     finish
+" endif
 
 let st = g:snip_start_tag
 let et = g:snip_end_tag
@@ -32,9 +32,11 @@ exec "Snippet ts TObject::callStatic('".st."className".et."', '".st."methodName"
 exec "Snippet mock $".st."mockName".et."->expects($this->".st."once()".et."<CR>->method('".st."method".et."')<CR>->with(".st."params".et.")<CR>->will($this->returnValue(".st."value".et."));<CR>".st.et
 exec "Snippet mocks $".st."mockName".et."->staticExpects($this->".st."once()".et."<CR>->method('".st."method".et."')<CR>->with(".st."params".et.")<CR>->will($this->returnValue(".st."value".et."));<CR>".st.et
 
-exec "Snippet getter private $".st."lowername".et.";<CR><CR>public get".st."UpperName".et."() {<CR>return $this->".st."lowername".et.";<CR>}<CR>".st.et
-exec "Snippet setter private $".st."lowername".et.";<CR><CR>public set".st."UpperName".et."($".st."lowername".et.") {<CR>$this->".st."lowername".et." = ".st."lowername".et.";<CR>}<CR>".st.et
-exec "Snippet property private $".st."lowername".et.";<CR><CR>public get".st."UpperName".et."() {<CR>return $this->".st."lowername".et.";<CR>}<CR><CR>public set".st."UpperName".et."($".st."lowername".et.") {<CR>$this->".st."lowername".et." = ".st."lowername".et.";<CR>}<CR>".st.et
+exec "Snippet get private $".st."lowername".et.";<CR><CR>public function get".st."lowername".cd."substitute(@z,'^.','\\U\\0','g')".et."() {<CR>return $this->".st."lowername".et.";<CR>}<CR>".st.et
+exec "Snippet sget public function get".st."lowername".cd."substitute(@z,'^.','\\U\\0','g')".et."() {<CR>return $this->".st."lowername".et.";<CR>}<CR>".st.et
+exec "Snippet set private $".st."lowername".et.";<CR><CR>public function set".st."lowername".cd."substitute(@z,'^.','\\U\\0','g')".et."($".st."lowername".et.") {<CR>$this->".st."lowername".et." = $".st."lowername".et.";<CR>}<CR>".st.et
+exec "Snippet sset public function set".st."lowername".cd."substitute(@z,'^.','\\U\\0','g')".et."($".st."lowername".et.") {<CR>$this->".st."lowername".et." = $".st."lowername".et.";<CR>}<CR>".st.et
+exec "Snippet prop private $".st."lowername".et.";<CR><CR>public function get".st."lowername".cd."substitute(@z,'^.','\\U\\0','g')".et."() {<CR>return $this->".st."lowername".et.";<CR>}<CR><CR>public function set".st."lowername".cd."substitute(@z,'^.','\\U\\0','g')".et."($".st."lowername".et.") {<CR>$this->".st."lowername".et." = $".st."lowername".et.";<CR>}<CR>".st.et
 
 
 " Class related

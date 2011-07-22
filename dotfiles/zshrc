@@ -1,6 +1,6 @@
 [ -z "$PS1" ] && return
 
-droot=~/unix-home
+droot=~/dev/unix-home
 
 function debug() {
 	COLOR_CYAN="\e[36m"

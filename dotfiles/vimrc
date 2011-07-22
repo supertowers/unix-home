@@ -18,10 +18,10 @@ set tabstop=4
 set shiftwidth=4
 
 " Use this for SPACES indentation
-"set expandtab
+set expandtab
 
 " Use this for TABS indentation
-set noexpandtab
+"set noexpandtab
 
 set diffopt=vertical,filler,iwhite
 set nowrap
@@ -116,8 +116,10 @@ let g:pdv_cfg_Version = "$id$"
 let g:pdv_cfg_Author = $EDITOR_AUTHOR
 let g:pdv_cfg_Copyright = $EDITOR_COPYRIGHT
 let g:pdv_cfg_License = $EDITOR_LICENSE
-let g:snip_start_tag = "({"
-let g:snip_end_tag = "})"
+
+" THIS DOES NOT WORK YET WITH MACROS
+" let g:snip_start_tag = "({"
+" let g:snip_end_tag = "})"
 
 " DirDiff
 let g:DirDiffDynamicDiffText = 1
