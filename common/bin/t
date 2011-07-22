@@ -1,0 +1,137 @@
+#!/usr/bin/ruby
+
+require "yaml"
+
+# {{{ :%: Task
+class Task
+    def initialize name
+        @name = name
+        @contexts = {}
+        @projects = {}
+    end
+    attr_accessor :name, :contexts, :projects
+end
+# }}}
+# {{{ :%: Context
+class Context
+    def initialize name
+        @name = name
+    end
+    attr_accessor :name
+end
+# }}}
+# {{{ :%: Project
+class Project
+    def initialize name
+        @name = name
+    end
+    attr_accessor :name
+end
+# }}}
+# {{{ :%: Management
+class Management
+    def initialize
+        @tasks = {}
+        @contexts = {}
+        @projects = {}
+    end
+    attr_accessor :tasks, :contexts, :projects
+    CONFIG_DIR = ENV['HOME'] + "/dev/identity.redcore.es/xtructs/app/fingerprint";
+    CONFIG_FILENAME = '.tasks';
+    CONFIG_FILE = CONFIG_DIR + '/' + CONFIG_FILENAME;
+    def Management.load
+        if File.file? CONFIG_FILE
+            YAML.load `cat #{CONFIG_FILE}`
+        else
+            Management.new.save 'init'
+        end
+    end
+    def save message
+        open(CONFIG_FILE, "w") { |io|
+            io << self.to_yaml
+        }
+        %x{cd #{CONFIG_DIR} && git add #{CONFIG_FILENAME} && git ci -m 'tasks: #{message}' #{CONFIG_FILENAME}}
+        self
+    end
+end
+# }}}
+
+m = Management.load
+# {{{ [+] getc(prompt : string) : string
+def getc prompt
+    print prompt
+    %x{stty -icanon}
+    c = STDIN.getc
+    print "\n"
+    return c
+end
+# }}}
+# {{{ [+] gettext(prompt : string) : string
+def gettext prompt
+    print prompt
+    %x{stty icanon}
+    s = STDIN.gets
+    return s.chomp
+end
+# }}}
+# {{{ [+] getchoice(prompt : string, choices : array) : string
+def getchoice prompt, choices
+    input = ""
+    selected = choices
+    while true
+        c = getc "#{prompt}: #{selected}, #{input}"
+        if c == "\n"
+            return input if choices.index input
+            return nil
+        elsif c == "\C-d"
+            return nil
+        else
+            input = input + c
+        end
+        selected = choices.select {|choice| choice.index input}
+        if selected.size == 1
+            return selected[0]
+        end
+    end
+end
+# }}}
+
+while true
+    p m
+    c = getc '> '
+	p c
+	p "+++++"
+
+    if c == 'n'
+        c = getc 'new: '
+        if c == 'c'
+            name = gettext 'new context name: '
+            if not m.contexts[name]
+                m.contexts[name] = Context.new name
+                m.save "added context #{name}"
+            end
+        elsif c == 'p'
+            name = gettext 'new project name: '
+            if not m.projects[name]
+                m.projects[name] = Project.new name
+                m.save "added project #{name}"
+            end
+        elsif c == 't'
+            name = gettext 'new task name: '
+            if not m.tasks[name]
+                m.tasks[name] = Task.new name
+                m.save "added task #{name}"
+                while (choices = m.contexts.keys.select {|c| not m.tasks[name].contexts.keys.index c }).size > 0
+                    context = getchoice "new task contexts (#{m.tasks[name].contexts.keys})", choices
+                    break if not context
+                    if not m.tasks[name].contexts[context]
+                        m.tasks[name].contexts[context] = m.contexts[context]
+                        m.save "added context #{context} to task #{name}"
+                    end
+                end
+            end
+        end
+    elsif c == "\n" or c == 'q' or c == "\C-d"
+        break;
+    end
+end
