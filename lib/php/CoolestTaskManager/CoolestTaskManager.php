@@ -3,9 +3,9 @@
 
 namespace CoolestTaskManager;
 
-use \CommandLineProgram;
-use \Console;
-use \CommandLineException;
+use \CliFramework\CommandLineProgram;
+use \CliFramework\Console;
+use \CliFramework\CommandLineException;
 use \Exception;
 
 require_once __DIR__ . '/../bootstrap.php';

@@ -1,5 +1,7 @@
 <?php
 
+namespace CliFramework;
+
 class Console
 {
     private static $instance;

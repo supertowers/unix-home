@@ -1,5 +1,9 @@
 <?php
 
+namespace CliFramework;
+
+use \Exception;
+
 abstract class CommandLineProgram
 {
     /**
