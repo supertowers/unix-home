@@ -1,9 +1,16 @@
 #!/usr/bin/php
 <?php
 
-require_once __DIR__ . '/bootstrap.php';
+namespace CoolestTaskManager;
 
-class TaskManagerProgram extends CommandLineProgram
+use \CommandLineProgram;
+use \Console;
+use \CommandLineException;
+use \Exception;
+
+require_once __DIR__ . '/../bootstrap.php';
+
+class CoolestTaskManagerProgram extends CommandLineProgram
 {
     public function getOptionsTree()
     {
@@ -31,6 +38,9 @@ class TaskManagerProgram extends CommandLineProgram
             'cancel' => array(
                 'task' => array($this, 'cancelTask'),
             ),
+            'export' => array(
+                'tasks' => array($this, 'exportTasks'),
+            ),
             'close' => array(
                 'task' => array($this, 'closeTask'),
             ),
@@ -57,24 +67,11 @@ class TaskManagerProgram extends CommandLineProgram
     }
 
 
-    final protected function getParamOptions()
-    {
-        return array(
-            'config_path' => array('--config', '-c'), // param
-            '+verbose' => array('--verbose', '-v'), // flag # NON USED YET
-            '-verbose' => array('--silent', '-s'), // flag # NON USED YET
-            '+help' => array('--help', '-h'), // flag
-            '+version' => array('--version', '-V'), // flag # NON USED YET
-        );
-    }
-
     protected function run($arguments, $params)
     {
         if (count($arguments) !== 1) // program name
         {
-            trigger_error('NON IMPLEMENTED', E_USER_ERROR);
-            # self::setError('Wrong parameter count');
-            # self::showHelp();
+            throw new WrongParametersException();
         }
 
         $c = Console::i();
@@ -442,6 +439,10 @@ class TaskManagerProgram extends CommandLineProgram
             {
                 $taskData = $c->color('red') . "($id) " . $c->color() . $task->getName();
             }
+            else if ($task->isWorkingOn())
+            {
+                $taskData = $c->color('yellow') . "($id) " . $c->color() . $task->getName();
+            }
             else if ($task->isClosed())
             {
                 $taskData = $c->color('gray') . "($id) " . $task->getName() . $c->color();
@@ -455,15 +456,57 @@ class TaskManagerProgram extends CommandLineProgram
         $c->clearCurrentBuffer();
     }
 
+
+    public function exportTasks()
+    {
+        $c = Console::i();
+
+        $tasks = TaskManager::i()->getAllTasks();
+        $tasksData = array();
+        foreach ($tasks as $id => $task)
+        {
+            $tasksData[$id] = $task->toArray();
+        }
+
+        $c->outl("<?=\n" . var_export($tasksData, TRUE));
+
+        $c->clearCurrentBuffer();
+    }
+
     public function getPrompt()
     {
         return Console::i()->color('blue') . ' > ' . Console::i()->color();
     }
+
+    //
+    // Abstract method implementations
+    //
+    final protected function getParamOptions()
+    {
+        return array(
+            'config_path' => array('--config', '-c'), // param
+            '+verbose' => array('--verbose', '-v'), // flag # NON USED YET
+            '-verbose' => array('--silent', '-s'), // flag # NON USED YET
+            '+help' => array('--help', '-h'), // flag
+            '+version' => array('--version', '-V'), // flag # NON USED YET
+        );
+    }
+
+    final protected function getVersion()
+    {
+        return 1.0;
+    }
+
+    final protected function getHelp($arguments, $params)
+    {
+        $c = Console::i();
+        return $c->color('blue') . 'Usage: ' . $c->color() . $arguments[0] . ' [(--config|-c) <config-path>] [-h|--help]';
+    }
+
 }
 
 class Task
 {
-
     const STATUS_IDLE = 1;
     const STATUS_WORKING = 2;
     const STATUS_COMPLETED = 4;
@@ -472,18 +515,29 @@ class Task
 
     private $id;
     private $name;
-    private $project = array();
+    private $project = NULL;
     private $contexts = array();
     private $status = self::STATUS_IDLE;
     private $completedDate = NULL;
+
+    public function getId() {
+        return $this->id;
+    }
 
     public function setId($id)
     {
         $this->id = $id;
     }
 
-    public function __construct($name)
+    public function __construct($name = NULL)
     {
+        if ($name !== NULL)
+        {
+            $this->setName($name);
+        }
+    }
+
+    public function setName($name) {
         $this->name = $name;
     }
 
@@ -527,6 +581,41 @@ class Task
     public function isClosed()
     {
         return $this->status === self::STATUS_CLOSED;
+    }
+
+    public function toArray()
+    {
+
+        $contextIds = array();
+        foreach ($this->contexts as $context)
+        {
+            $contextIds[] = $context->getId();
+        }
+
+        return array(
+            'id' => $this->id,
+            'name' => $this->name,
+            'project' => NULL, // $this->project->getId(),
+            'contexts' => $contextIds,
+            'status' => $this->status,
+            'completedDate' => $this->completedDate,
+        );
+    }
+
+    public function fromArray($data)
+    {
+        $contexts = array();
+//      foreach ($data['contexts'] as $contextId)
+//      {
+//          $contexts[$contextId] = ContextManager::get($contextId);
+//      }
+
+        $this->id = $data['id'];
+        $this->name = $data['name'];
+        $this->project = NULL; // ProjectManager::get($data['project'])
+        $this->contexts = $contexts;
+        $this->status = $data['status'];
+        $this->completedDate = $data['completedDate'];
     }
 }
 
@@ -607,9 +696,29 @@ class DataContainer implements IDataContainer
 
     public function addTask(Task $task)
     {
-        $taskId = ++$this->lastTaskId;
-        $this->tasks[$taskId] = $task;
-        $task->setId($taskId);
+        if ($task->getId() === NULL)
+        {
+            $taskId = ++$this->lastTaskId;
+            $task->setId($taskId);
+        }
+        else
+        {
+            $taskId = $task->getId();
+            if ($this->lastTaskId < $taskId)
+            {
+                $this->lastTaskId = $taskId;
+            }
+        }
+
+        if ($task->isClosed())
+        {
+            $this->closedTasks[$taskId] = $task;
+        }
+        else
+        {
+            $this->tasks[$taskId] = $task;
+        }
+
         return $taskId;
     }
     public function closeTask($taskId)
@@ -685,7 +794,7 @@ class TaskManager
         return self::$instance;
     }
 
-    private $dataContainerClassName = 'DataContainer';
+    private $dataContainerClassName = '\CoolestTaskManager\DataContainer';
     private $dataContainer;
 
     private $configPath = NULL;
@@ -709,28 +818,49 @@ class TaskManager
 
     private function loadContainerFromFile($path)
     {
+        $className = $this->dataContainerClassName;
+        if (! class_exists($className))
+        {
+            throw new InvalidDataContainerClassName($className);
+        }
+        $this->dataContainer = new $className();
+
+        if (! $this->dataContainer instanceof IDataContainer)
+        {
+            throw new ImplementationException();
+        }
+
         if (file_exists($path))
         {
-            $this->dataContainer = unserialize(file_get_contents($path));
+            $data = include($path);
+            $tasksData = $data['tasks'];
 
-            if (! $this->dataContainer instanceof IDataContainer)
+            foreach ($tasksData as $id => $taskData)
             {
-                throw new DataCorruptionFound();
+                $task = new Task();
+                $task->fromArray($taskData);
+                $this->dataContainer->addTask($task);
             }
-        }
-        else
-        {
-            $className = $this->dataContainerClassName;
-            if (! class_exists($className))
-            {
-                throw new InvalidDataContainerClassName($className);
-            }
-            $this->dataContainer = new $className();
         }
     }
     private function saveContainerToFile($path)
     {
-        file_put_contents($path, serialize($this->dataContainer));
+        $tasks = $this->dataContainer->getTasks() + $this->dataContainer->getClosedTasks();
+        $tasksData = array();
+        foreach ($tasks as $id => $task)
+        {
+            $tasksData[$id] = $task->toArray();
+        }
+
+        $data = array(
+            'tasks' => $tasksData,
+        );
+
+        $phpFileData = var_export($data, TRUE);
+        $phpFileData = preg_replace("/array \(\n/", "array(\n", $phpFileData);
+        $phpFileData = preg_replace("/=> \n +/", "=> ", $phpFileData);
+
+        file_put_contents($path, "<?php return " . $phpFileData . ";");
     }
 
 
@@ -796,8 +926,13 @@ class TaskManager
     }
 }
 
-class DataCorruptionFound extends Exception
+class DataCorruptionFound extends CommandLineException
 {
+    public function __construct() {
+        return parent::__construct('Data corruption was found trying to load ' .
+            'tasks database. Please try again with an older version of the ' .
+            'program.');
+    }
 }
 class InvalidDataContainerClassName extends Exception
 {
@@ -809,6 +944,13 @@ class NotConfiguredTaskManagerException extends Exception
 {
 }
 
+class WrongParametersException extends CommandLineException
+{
+    public function __construct() {
+        return parent::__construct('Wrong parameters');
+    }
+}
+
 function debug($data)
 {
     $c = Console::i();
@@ -816,5 +958,5 @@ function debug($data)
 }
 
 
-CommandLineProgram::main('TaskManagerProgram', $argv);
+CommandLineProgram::main('\CoolestTaskManager\CoolestTaskManagerProgram', $argv);
 

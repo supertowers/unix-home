@@ -6,8 +6,21 @@ class Console
 
     private $currentBuffer = '';
 
+    /**
+     * Defines if the console has started writting data to the user.
+     * 
+     * @var boolean
+     */
+    private $outputing = FALSE;
+
     private static $inResource = STDIN;
 
+    /**
+     * Singleton method.
+     * 
+     * @author Pablo Lopez Torres <pablolopeztorres@gmail.com> 
+     * @return Console
+     */
     public static function i()
     {
         if (self::$instance === NULL)
@@ -17,6 +30,12 @@ class Console
         return self::$instance;
     }
 
+    /**
+     * Class constructor made private for assuring singletoness.
+     * 
+     * @author Pablo Lopez Torres <pablolopeztorres@gmail.com> 
+     * @return void
+     */
     private function __construct()
     {
 
@@ -63,6 +82,8 @@ class Console
 
     public function out($data)
     {
+        $this->outputing = TRUE;
+
         $this->currentBuffer .= $data;
         print($data);
     }
@@ -231,6 +252,22 @@ class Console
         $this->currentBuffer = '';
     }
 
+
+    /**
+     * hasStartedOutputing
+     * 
+     * @author Pablo Lopez Torres <pablolopeztorres@gmail.com> 
+     * @return void
+     */
+    public function hasStartedOutputing()
+    {
+        return $this->outputing;
+    }
+
+    public function endProgram($returnValue = 0)
+    {
+        exit();
+    }
 
     public function setProgram (CommandLineProgram $program) {
         $this->program = $program;

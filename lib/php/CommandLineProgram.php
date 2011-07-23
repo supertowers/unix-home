@@ -3,14 +3,6 @@
 abstract class CommandLineProgram
 {
     /**
-     * getPrompt
-     * 
-     * @author Pablo Lopez Torres <pablolopeztorres@gmail.com> 
-     * @return void
-     */
-    abstract protected function getPrompt();
-
-    /**
      * getParamOptions
      * 
      * @author Pablo Lopez Torres <pablolopeztorres@gmail.com> 
@@ -19,26 +11,54 @@ abstract class CommandLineProgram
     abstract protected function getParamOptions();
 
     /**
-     * run
+     * getVersion
+     * 
+     * @author Pablo Lopez Torres <pablolopeztorres@gmail.com> 
+     * @return string
+     */
+    abstract protected function getVersion();
+    /**
+     * getHelp
      * 
      * @author Pablo Lopez Torres <pablolopeztorres@gmail.com> 
      * @return void
      */
+    abstract protected function getHelp($arguments, $params);
+
+    /**
+     * run
+     * 
+     * @author Pablo Lopez Torres <pablolopeztorres@gmail.com> 
+     * @param mixed $arguments 
+     * @param mixed $params 
+     * @return void
+     */
     abstract protected function run($arguments, $params);
 
-    private static function parseArgs($args, $options)
+
+    private static function parseArgs($argv, $options)
     {
-        $argumentsToParse = $args;
+        $argumentsToParse = $argv;
         $parsedOptions = array();
-        foreach ($options as $optionKey => $option)
+        $params = array();
+        $arguments = array();
+
+        foreach ($options as $optionKey => $optionValues)
         {
-            foreach ($option as $value)
+            if ($optionKey[0] === '-' || $optionKey[0] === '+')
+            {
+                $params[substr($optionKey, 1)] = FALSE;
+            }
+            else
+            {
+                $params[substr($optionKey, 1)] = NULL;
+            }
+            foreach ($optionValues as $value)
             {
                 $parsedOptions[$value] = $optionKey;
             }
         }
 
-        $params = array();
         while (! empty($argumentsToParse)) {
 
             $arg = array_shift($argumentsToParse);
@@ -56,7 +76,7 @@ abstract class CommandLineProgram
                     default:
                         if (empty($argumentsToParse))
                         {
-                            throw new UnableToParseArgs($args, $options);
+                            throw new UnableToParseArgs($argv, $options);
                         }
                         $params[$parsedOption] = array_shift($argumentsToParse);
                         break;
@@ -79,8 +99,25 @@ abstract class CommandLineProgram
 
         list($arguments, $params) = self::parseArgs($argv, $p->getParamOptions());
 
-        $p->run($arguments, $params);
+        try
+        {
+            $p->run($arguments, $params);
+        }
+        catch (CommandLineException $e)
+        {
+            $outputing = $c->hasStartedOutputing();
+            $c->outl($c->color('gray') . "[" . $c->color('red') . " ERROR " . $c->color('gray') . "] " . $c->color() . $e->getMessage());
+            if (! $outputing)
+            {
+                $c->outl($p->getHelp($arguments, $params));
+            }
+            $c->endProgram(2);
+        }
     }
+}
+
+abstract class CommandLineException extends Exception
+{
 }
 
 class UnableToParseArgs extends Exception

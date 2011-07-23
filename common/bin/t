@@ -37,7 +37,7 @@ class Management
     end
     attr_accessor :tasks, :contexts, :projects
     CONFIG_DIR = ENV['HOME'] + "/dev/identity.redcore.es/xtructs/app/fingerprint";
-    CONFIG_FILENAME = '.tasks';
+    CONFIG_FILENAME = '.tasks-ruby';
     CONFIG_FILE = CONFIG_DIR + '/' + CONFIG_FILENAME;
     def Management.load
         if File.file? CONFIG_FILE
