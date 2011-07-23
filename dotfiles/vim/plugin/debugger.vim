@@ -113,7 +113,7 @@
 
 " Do not source this script when python is not compiled in.
 if !has("python")
-	echoe "Python is not enabled :( Super-Vim-Php-Debugger is not gonna work"
+	"echoe "Python is not enabled :( Super-Vim-Php-Debugger is not gonna work"
     finish
 endif
 
