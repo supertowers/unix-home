@@ -1,4 +1,4 @@
 #!/bin/sh
 
-export PATH=$PATH:/usr/local/bin/:/usr/local/sbin/:/opt/local/bin/:/opt/local/sbin/
+export PATH=/usr/local/bin/:$PATH:/usr/local/sbin/:/opt/local/bin/:/opt/local/sbin/:/Developer/usr/bin/:/Developer/usr/sbin/:~/macports/bin/:~/macports/sbin/
 
