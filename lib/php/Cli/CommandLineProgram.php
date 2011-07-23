@@ -1,10 +1,11 @@
 <?php
 
-namespace CliFramework;
+namespace Cli;
 
-use \Exception;
+use \Core\Base;
+use \Core\BaseException;
 
-abstract class CommandLineProgram
+abstract class CommandLineProgram extends Base
 {
     /**
      * getParamOptions
@@ -120,11 +121,11 @@ abstract class CommandLineProgram
     }
 }
 
-abstract class CommandLineException extends Exception
+abstract class CommandLineException extends BaseException
 {
 }
 
-class UnableToParseArgs extends Exception
+class UnableToParseArgs extends BaseException
 {
     private static $customMessage = "Unable to parse arguments: %s with options: %s";
 

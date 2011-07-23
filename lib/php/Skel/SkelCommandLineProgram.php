@@ -5,8 +5,8 @@ namespace Skel;
 
 require_once dirname(__DIR__) . '/bootstrap.php';
 
-use \CommandLineProgram;
-use \Console;
+use \Cli\CommandLineProgram;
+use \Cli\Console;
 
 /**
  * Example Command Line Program 

@@ -1,6 +1,6 @@
 <?php
 
-namespace CliFramework;
+namespace Cli;
 
 class Console
 {
