@@ -1,14 +1,5 @@
 <?php return array(
   'tasks' => array(
-    1 => array(
-      'id' => 1,
-      'name' => 'Add TaskManager to its own folder / namespace',
-      'project' => NULL,
-      'contexts' => array(
-      ),
-      'status' => NULL,
-      'completedDate' => NULL,
-    ),
     2 => array(
       'id' => 2,
       'name' => 'Split TaskManager into several files',
@@ -17,15 +8,6 @@
       ),
       'status' => NULL,
       'completedDate' => NULL,
-    ),
-    3 => array(
-      'id' => 3,
-      'name' => 'Create a Example Program for copying it (Skel) using the command line framework',
-      'project' => NULL,
-      'contexts' => array(
-      ),
-      'status' => 4,
-      'completedDate' => 1311372073,
     ),
     4 => array(
       'id' => 4,
@@ -51,8 +33,26 @@
       'project' => NULL,
       'contexts' => array(
       ),
-      'status' => 4,
+      'status' => 16,
       'completedDate' => 1311372055,
+    ),
+    3 => array(
+      'id' => 3,
+      'name' => 'Create a Example Program for copying it (Skel) using the command line framework',
+      'project' => NULL,
+      'contexts' => array(
+      ),
+      'status' => 16,
+      'completedDate' => 1311372073,
+    ),
+    1 => array(
+      'id' => 1,
+      'name' => 'Add TaskManager to its own folder / namespace',
+      'project' => NULL,
+      'contexts' => array(
+      ),
+      'status' => 16,
+      'completedDate' => 1311461237,
     ),
   ),
 );

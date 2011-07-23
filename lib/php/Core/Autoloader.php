@@ -7,7 +7,7 @@ namespace Core;
  *
  * @see Base
  */
-require_once __DIR__ . '/Base.php';
+require_once LIB_PATH . 'Core/Base.php';
 
 /**
  * Autoloader 
@@ -51,7 +51,6 @@ class Autoloader extends Base
 	{
 
 	}
-	
 
 	public function register()
 	{
@@ -63,13 +62,30 @@ class Autoloader extends Base
 		spl_autoload_unregister(array($this, 'autoloadClass'));
 	}
 
+    private $autoloadPaths = array(LIB_PATH);
+
+    public function addAutoloadPath($autoloadPath) {
+        $this->autoloadPaths[] = $autoloadPath;
+    }
+
+    public function getAutoloadPaths() {
+        return $this->autoloadPaths;
+    }
+
+    public function setAutoloadPaths($autoloadPaths) {
+        $this->autoloadPaths = $autoloadPaths;
+    }
+
 	public function autoloadClass($className)
 	{
-		$filename = LIB_PATH . str_replace('\\', '/', $className) . '.php';
-		if (file_exists($filename))
-		{
-			require_once $filename;
-		}
+        foreach ($this->autoloadPaths as $autoloadPath)
+        {
+            $filename = $autoloadPath . str_replace('\\', '/', $className) . '.php';
+            if (file_exists($filename))
+            {
+                require_once $filename;
+            }
+        }
 	}
 }
 

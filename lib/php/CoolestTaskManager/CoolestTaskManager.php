@@ -8,7 +8,12 @@ use \Cli\Console;
 use \Cli\CommandLineException;
 use \Exception;
 
-require_once __DIR__ . '/../bootstrap.php';
+// main bootstrap
+require_once dirname(__DIR__) . '/bootstrap.php';
+
+// app bootstrap
+require_once __DIR__ . '/bootstrap.php';
+
 
 class CoolestTaskManagerProgram extends CommandLineProgram
 {
