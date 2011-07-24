@@ -24,6 +24,15 @@ then
     exit 1
 fi
 
+if [ -e "${dhome}/.environment" ]
+then
+    $droot/common/bin/justify-left "Deleting environment file '.environment' ..." 70
+
+    rm "${dhome}/.environment" \
+		&& echo -e "$C_S[$C_G  OK  $C_S]" \
+		|| echo -e "$C_S[$C_R FAIL $C_S]"
+fi
+
 for wholefile in ${dold}/*
 do
     currentfile=$(basename $wholefile)

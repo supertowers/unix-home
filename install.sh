@@ -29,6 +29,27 @@ else
 		|| echo -e "$C_S[$C_R FAIL $C_S]"
 fi
 
+# create environment file
+homefile="${dhome}/.environment"
+backupfile="${dold}/environment"
+
+if [ -e "${homefile}" -o -h "${homefile}" ]
+then
+    $droot/common/bin/justify-left "Saving backup of file '.environment' ..." 70
+    mv "${homefile}" "${backupfile}" \
+        && echo -e "$C_S[$C_G  OK  $C_S]" \
+        || echo -e "$C_S[$C_R FAIL $C_S]"
+fi
+
+    $droot/common/bin/justify-left "Creating environment file '.environment' ..." 70
+
+    # contents of environment file
+	echo "#!/bin/sh" > "${homefile}" \
+	&& echo "" >> "${homefile}" \
+    && echo "export droot=\"$PWD\"" >> "${homefile}" \
+		&& echo -e "$C_S[$C_G  OK  $C_S]" \
+		|| echo -e "$C_S[$C_R FAIL $C_S]"
+
 # foreach file and dir
 for currentfile in ${droot}/dotfiles/*
 do

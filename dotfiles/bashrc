@@ -1,9 +1,11 @@
 [ -z "$PS1" ] && return
 
-droot=~/unix-home
+. ~/.environment
 
 function debug() {
-    echo -e " > $@"
+    COLOR_CYAN=$(${droot}/common/bin/color cyan)
+    COLOR_RESET=$(${droot}/common/bin/color)
+	echo -e "$COLOR_CYAN > $@$COLOR_RESET"
 }
 
 # common files
