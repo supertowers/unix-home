@@ -2,10 +2,11 @@
 
 . ~/.environment
 
+export DEBUG_COLOR_CYAN=$(${droot}/common/bin/color cyan)
+export DEBUG_COLOR_RESET=$(${droot}/common/bin/color)
+
 function debug() {
-    COLOR_CYAN=$(${droot}/common/bin/color cyan)
-    COLOR_RESET=$(${droot}/common/bin/color)
-	echo -e "$COLOR_CYAN > $@$COLOR_RESET"
+	echo -e "$DEBUG_COLOR_CYAN > $@ $DEBUG_COLOR_RESET"
 }
 
 # common files
