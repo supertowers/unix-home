@@ -204,12 +204,20 @@ class Console
 
             if ($tabMode)
             {
+                // show help mode
                 $line = $this->getCurrentBuffer();
 
                 $this->outl();
                 foreach ($detections as $detection)
                 {
-                    $this->outl($detection);
+                    if (trim($detection) == '')
+                    {
+                        $this->outl($this->color('red') . '(' . $this->color('gray') . 'empty' . $this->color('red') . ')' . $this->color());
+                    }
+                    else
+                    {
+                        $this->outl($detection);
+                    }
                 }
                 $this->clearCurrentBuffer();
 
@@ -224,26 +232,71 @@ class Console
                 else
                 {
                     $prevTyped = $typed;
-                    $output = $this->color('cyan') . $char . $this->color();
 
-                    if (ord($char) === 13)
+                    if (ord($char) !== 10) // ENTER
                     {
-                        die('aaaa');
+                        $this->out($this->color('cyan') . $char . $this->color());
                     }
 
-
-                    $this->out($output);
                     if (count($detections) == 1)
                     {
                         $found = current($detections);
                         $this->out(substr($found, strlen($typed)));
                         break;
                     }
+
+                    // autocomplete mode
+                    for ($i = strlen($typed); $i < strlen($detections[0]); $i++)
+                    {
+                        $source = $detections[0][$i];
+
+                        $advance = TRUE;
+                        foreach ($detections as $detection)
+                        {
+                            if ($detection[$i] !== $source)
+                            {
+                                $advance = FALSE;
+                                break;
+                            }
+                        }
+
+                        if ($advance)
+                        {
+                            $autocomplete = TRUE;
+                            $typed = $typed . $source;
+                            $this->out($source);
+
+                            $prevTyped = $typed;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
                 }
             }
 
         }
         return $found;
+    }
+
+    public function getMultiChoice($optionsTree)
+    {
+        $callback = NULL;
+        if (is_array($optionsTree) && ! isset($optionsTree[0])) // valid callback
+        {
+            $action = $this->getChoice(array_keys($optionsTree));
+            if ($action !== NULL)
+            {
+                $this->out(" ");
+                $callback = $this->getMultiChoice($optionsTree[$action]);
+            }
+        }
+        else
+        {
+            $callback = $optionsTree;
+        }
+        return $callback;
     }
 
     public function getCurrentBuffer() {

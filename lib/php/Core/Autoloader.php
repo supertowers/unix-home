@@ -62,10 +62,12 @@ class Autoloader extends Base
 		spl_autoload_unregister(array($this, 'autoloadClass'));
 	}
 
-    private $autoloadPaths = array(LIB_PATH);
+    private $autoloadPaths = array(
+        array('\\', LIB_PATH),
+    );
 
-    public function addAutoloadPath($autoloadPath) {
-        $this->autoloadPaths[] = $autoloadPath;
+    public function addAutoloadPath($base, $autoloadPath) {
+        $this->autoloadPaths[] = array($base, $autoloadPath);
     }
 
     public function getAutoloadPaths() {
@@ -76,16 +78,24 @@ class Autoloader extends Base
         $this->autoloadPaths = $autoloadPaths;
     }
 
-	public function autoloadClass($className)
-	{
-        foreach ($this->autoloadPaths as $autoloadPath)
+    public function autoloadClass($className)
+    {
+        foreach ($this->autoloadPaths as $autoloadChunks)
         {
-            $filename = $autoloadPath . str_replace('\\', '/', $className) . '.php';
-            if (file_exists($filename))
+            list($base, $autoloadPath) = $autoloadChunks;
+            if (strpos('\\' . $className, $base) === 0) // important triple equal since FALSE is not found
             {
-                require_once $filename;
+                $filename = $autoloadPath . str_replace('\\', '/', substr('\\' . $className, strlen($base))) . '.php';
+                if (file_exists($filename))
+                {
+                    require_once $filename;
+                    if (class_exists($className, FALSE))
+                    {
+                        return;
+                    }
+                }
             }
         }
-	}
+    }
 }
 

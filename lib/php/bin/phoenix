@@ -1,0 +1,760 @@
+#!/usr/bin/php
+<?php
+
+namespace Phoenix;
+
+use \Cli\Console;
+use \Cli\CommandLineProgram;
+use \Core\BaseException;
+
+use \Phoenix\Cli\ProjectCommandManager;
+use \Phoenix\Cli\FileCommandManager;
+use \Phoenix\Cli\ClassCommandManager;
+use \Phoenix\Cli\MethodCommandManager;
+
+use \Phoenix\Phpl\ProjectFactory;
+
+
+// @todo pablo - make it standard
+define('LIB_PATH', '/Users/pablo/dev/unix-home/lib/php/');
+
+// START CONFIG
+// note the final slash
+define('DOC_PATH', dirname(__DIR__) . '/doc/');
+// END CONFIG
+
+/**
+ * Initialize the framework.
+ */
+require_once LIB_PATH . '/bootstrap.php';
+
+/**
+ * App Bootstrap
+ */
+require_once dirname(__DIR__) . '/bootstrap.php';
+
+/**
+ * Phoenix command line script.
+ *
+ * Requires CommandLineProgram v1.0.
+ * 
+ * @package php-phoenix
+ * @subpackage scripts
+ * @version $id$
+ * @author Pablo López Torres <pablolopeztorres@gmail.com>
+ */
+class PhoenixCommandLineProgram extends CommandLineProgram
+{
+	/**
+	 * project 
+	 * 
+	 * @var Project
+	 */
+	private static $project;
+
+	/**
+	 * projectFactory
+	 * 
+	 * @var ProjectFactory
+	 */
+	private static $projectFactory;
+
+	/**
+	 * COMMAND_LINE_PROMPT 
+	 * 
+	 * @const string
+	 */
+	const COMMAND_LINE_PROMPT = "ph§ ";
+
+	/**
+	 * SOFTWARE_NAME 
+	 * 
+	 * @const string
+	 */
+	const SOFTWARE_NAME = "PHP Phoenix";
+
+	/**
+	 * handleCommand
+	 * 
+	 * @author Pablo López Torres <pablolopeztorres@gmail.com> 
+	 * @param mixed $command 
+	 * @param mixed $params 
+	 * @return boolean If TRUE the end of execution is required
+	 */
+	private static function handleCommand($command, $params) {
+
+		$hasToExit = FALSE;
+
+		switch (strtolower($command))
+		{
+			case 'p':
+			case 'project':
+				self::handleProjectCommand($params);
+				break;
+			case 'f':
+			case 'file':
+				if (! isset(self::$project))
+				{
+					print("ERROR: You need to specify a project to load: 'project select <name>'.\n");
+					print("       To view a list of the projects you can load type 'project list'.\n");
+				}
+				else
+				{
+					self::handleFileCommand($params);
+				}
+				break;
+			case 'c':
+			case 'class':
+				if (! isset(self::$project))
+				{
+					print("ERROR: You need to specify a project to load: 'project select <name>'.\n");
+					print("       To view a list of the projects you can load type 'project list'.\n");
+				}
+				else
+				{
+					self::handleClassCommand($params);
+				}
+				break;
+			case 'h':
+			case 'help':
+				$subject = "";
+				if (count($params) > 0)
+				{
+					$subject = array_shift($params);
+				}
+				self::getInternalHelp($subject);
+				break;
+			case 'q':
+			case 'quit':
+			case 'exit':
+				$hasToExit = TRUE;
+				break;
+			case '':
+				// don't do anything
+				break;
+			default:
+				print("Command '$command' not recognized. To get help write 'help'.\n");
+				break;
+		}
+
+		return $hasToExit;
+	}
+
+    /**
+     * handleFileCommand
+     * 
+     * @author Pablo López Torres <pablolopeztorres@gmail.com> 
+     * @param mixed $params 
+     * @return void
+     */
+    private static function handleFileCommand($params)
+    {
+        if (! isset($params[0]))
+        {
+            return self::getInternalHelp('file');
+        }
+
+        $projectFactory = ProjectFactory::getInstance();
+
+        $command = array_shift($params);
+
+        switch ($command)
+        {
+            default:
+                print("Command 'file $command' not recognized. To get help write 'help file'.\n");
+                break;
+        }
+    }
+
+	/**
+	 * parseParameters
+	 * 
+	 * Config should be in format:
+	 *   array(
+	 *       'v|very-long-name' => 'required value',
+	 *       'o|other-very-long-name' => 'required flag',
+	 *       'a|another-very-long-name' => 'optional flag',
+	 *   );
+	 * 
+	 * 
+	 * @access private
+	 * @author Pablo López Torres <pablolopeztorres@gmail.com> 
+	 * @param mixed $config 
+	 * @param mixed $params 
+	 * @return void
+	 */
+	private static function parseParameters($config, $params)
+	{
+		$options = array();
+		reset($params);
+
+		while (current($params)) {
+
+			$param = current($params);
+
+			foreach ($config as $configKey => $configOptions)
+			{
+				list($shortName, $longName) = explode('|', $configKey);
+				list($defaultAccess, $typeConfigOption) = explode(' ', $configOptions);
+
+				if ($param === "-$shortName" || $param === "--$longName")
+				{
+					$params[key($params)] = NULL;
+					if ($typeConfigOption === 'flag')
+					{
+						$value = TRUE;
+					}
+					elseif ($typeConfigOption === 'option')
+					{
+						$value = next($params);
+						$params[key($params)] = NULL;
+					}
+					else
+					{
+						throw new UnknownTypeOfConfigOptionException();
+					}
+
+					$options[$longName] = $value;
+				}
+			}
+
+			next($params);
+		} 
+
+		$params = array_values(array_diff($params, array(NULL)));
+
+		return array($params, $options);
+	}
+
+    /**
+     * handleClassCommand
+     * 
+     * @author Pablo López Torres <pablolopeztorres@gmail.com> 
+     * @param mixed $params 
+     * @return void
+     */
+    private static function handleClassCommand($params)
+    {
+        if (! isset($params[0]))
+        {
+            return self::getInternalHelp('class');
+        }
+
+        $command = array_shift($params);
+
+        switch ($command)
+        {
+            case 'list':
+                // 
+                // class list
+                // 
+
+				$config = array(
+					'i|invert' => 'optional flag',
+					'p|plain' => 'optional flag',
+				);
+
+				list($params, $options) = self::parseParameters($config, $params);
+
+				if (count($params) !== 0)
+                {
+                    return self::getInternalHelp('class');
+				}
+
+				$defaultProject = self::$project->getIdentifier();
+				ProjectCliView::getInstance()->printClasses($defaultProject, $options);
+
+                break;
+            case 'show':
+                // 
+                // class show <classname> [-b|--break] [-u|--only-public] [-o|--avoid-private-hiding] [-g|--group-parents] [-s|--sorted] [-a|--sorted-access-level] 
+                // 
+				$config = array(
+					'b|break' => 'optional flag',
+					'u|only-public' => 'optional flag',
+					'o|avoid-private-hiding' => 'optional flag',
+					'g|group-parents' => 'optional flag',
+					's|sorted' => 'optional flag',
+					'a|sorted-access-level' => 'optional flag',
+				);
+
+				list($params, $options) = self::parseParameters($config, $params);
+
+				if (count($params) !== 1)
+				{
+					return self::getInternalHelp('class');
+				}
+
+				$className = array_shift($params);
+
+				$defaultProject = self::$project->getIdentifier();
+				ProjectCliView::getInstance()->printClassInfo($defaultProject, $className, $options);
+
+                break;
+            default:
+                print("Command 'class $command' not recognized. To get help write 'help class'.\n");
+                break;
+        }
+    }
+
+
+    private $currentProject;
+
+	/**
+	 * loadDefaultProject
+	 * 
+	 * @author Pablo López Torres <pablolopeztorres@gmail.com> 
+	 * @return void
+	 */
+	private function loadDefaultProject()
+	{
+        $c = Console::i();
+        $projectFactory = ProjectFactory::getInstance();
+        $this->currentProject = $projectFactory->loadDefault();
+		if ($this->currentProject !== NULL && $this->interactiveMode === TRUE)
+		{
+			$projectName = $this->currentProject->getName();
+			$c->outl($c->color('gray') . "Project '" . $c->color('red') . $projectName . $c->color('gray') . "' loaded sucessfully." . $c->color());
+		}
+	}
+
+    /**
+     * getInternalHelp
+     * 
+     * @author Pablo López Torres <pablolopeztorres@gmail.com> 
+     * @param string $errorMessage 
+     * @return void
+     */
+    private static function getInternalHelp($subject = "")
+    {
+        switch ($subject)
+        {
+			case 'project':
+				break;
+			case 'file':
+				break;
+			case 'class':
+				break;
+            default:
+                break;
+        }
+
+
+        print($helpMessage);
+    }
+
+    /**
+     * printPersonalized
+     * 
+     * @author Pablo López Torres <pablolopeztorres@gmail.com> 
+     * @param mixed $element 
+     * @return void
+     */
+	private static function printPersonalized($element)
+	{
+
+		// print them personalized
+		if (! isset($element))
+		{
+			print " + PhpClass not found!!\n";
+		}
+		else
+		{
+			print self::getColor('light_gray');
+
+			// print class signature
+			print $element->isAbstract() ? " :@: " : " :%: ";
+
+			print self::getColor('light_cyan');
+
+			print $element->getIdentifier();
+
+			print self::getColor('light_gray');
+
+			if ($element->getParentName() !== NULL)
+			{
+				print " : ";
+
+				print self::getColor('cyan');
+				print $element->getParentName();
+				print self::getColor('normal');
+			}
+			if (count($element->getImplementingNames()) > 0)
+			{
+				print " < " . self::getColor('cyan');
+
+                $glue = self::getColor('normal') . ', ' . self::getColor('cyan');
+                print implode($glue, $element->getImplementingNames());
+
+                print self::getColor('normal');
+			}
+
+			print self::getColor('normal');
+
+			print "\n";
+
+			foreach ($element->getElements(self::$sorted, self::$groupParents) as $child)
+			{
+                switch ($child['access'])
+                {
+                    case 'public':
+
+                        if (self::$showPublicElements === FALSE)
+                        {
+                            continue 2;
+                        }
+
+                        break;
+                    case 'protected':
+
+                        if (self::$showProtectedElements === FALSE)
+                        {
+                            continue 2;
+                        }
+
+                        break;
+                    case 'private':
+
+                        if (self::$showPrivateElements === FALSE)
+                        {
+                            continue 2;
+                        }
+
+                        break;
+                    default:
+                        throw new UnexpectedAccessLevelException('unexpected access level');
+                        break;
+                }
+
+				$closers = $child['is_final'] ? '()' : '[]';
+
+				if ($child['is_static'])
+				{
+					$closers = $closers[1] . $closers[0]; // reverse the chars
+				}
+
+				$useColorToPrintName = NULL;
+
+				switch ($child['access'])
+				{
+				case 'public':
+					$useColorToPrintName = self::getColor('light_red');
+					$colorToUse = self::getColor('light_gray');
+					$accessMark = '+';
+					break;
+				case 'protected':
+					$useColorToPrintName = self::getColor('light_purple');
+					$colorToUse = self::getColor('light_gray');
+					$accessMark = '#';
+					break;
+				case 'private':
+					$colorToUse = self::getColor('light_gray');
+					$accessMark = '-';
+					break;
+				default:
+					throw new WrongAccessException('wrong access');
+					break;
+				}
+
+				print $colorToUse;
+
+				// print method signature
+				print "    " . $closers[0] . $accessMark . $closers[1] . " ";
+
+				if (isset($useColorToPrintName))
+				{
+					print $useColorToPrintName;
+				}
+				print $child['name'];
+
+				print $colorToUse;
+
+                if (! self::$breakLineOnParameters)
+                {
+                    print "(";
+                }
+
+				// print params
+				foreach ($child['params'] as $key => &$param)
+				{
+
+                    if (self::$breakLineOnParameters)
+                    {
+                        print "\n        ";
+                    }
+
+					if (isset($param['default'])) print "[ ";
+
+					// if is a reference
+					if ($param['reference'])
+					{
+						print "&";
+					}
+
+					print $param['name'];
+
+					if (isset($param['default']))
+					{
+						print " = {$param['default']}";
+					}
+					if (isset($param['type']))
+					{
+						print " : {$param['type']}";
+					}
+					if (isset($param['default'])) print " ]";
+
+					if (count($child['params']) > $key + 1)
+					{
+                        if (! self::$breakLineOnParameters)
+                        {
+                            print ", ";
+                        }
+					}
+				}
+                
+                if (! self::$breakLineOnParameters)
+                {
+                    print ")";
+                }
+
+				print "\n";
+			}
+
+			print self::getColor('normal');
+
+			print "\n";
+		}
+	}
+
+    //
+    // Override methods
+    //
+    /**
+     * getHelp
+     * 
+     * @author Pablo Lopez Torres <pablolopeztorres@gmail.com> 
+     * @return void
+     */
+    protected function getHelp($arguments, $params)
+    {
+        $basename = $arguments[0];
+        $helpMessage = "" . 
+            "Usage: $basename                                                                     \n" .
+            "\n";
+
+        return $helpMessage;
+    }
+    /**
+     * getParamOptions
+     * 
+     * @author Pablo Lopez Torres <pablolopeztorres@gmail.com> 
+     * @return void
+     */
+    protected function getParamOptions()
+    {
+        return array();
+    }
+
+    /**
+     * getVersion
+     * 
+     * @author Pablo Lopez Torres <pablolopeztorres@gmail.com> 
+     * @return string
+     */
+    protected function getVersion()
+    {
+        return '0.2*';
+    }
+
+
+    private $interactiveMode = FALSE;
+
+    /**
+     * run
+     * 
+     * @author Pablo Lopez Torres <pablolopeztorres@gmail.com> 
+     * @param mixed $arguments 
+     * @param mixed $params 
+     * @return void
+     */
+    protected function run($arguments, $params)
+    {
+        // remove binary from args
+        $commandName = array_shift($arguments);
+
+        $c = Console::i();
+
+        if (count($arguments) === 0)
+        {
+            $this->interactiveMode = TRUE;
+        }
+
+        if ($this->interactiveMode)
+        {
+            $c->outl($c->color('blue') . self::SOFTWARE_NAME . " " . $this->getVersion() . $c->color());
+            $c->clearCurrentBuffer();
+        }
+
+        // loads the config
+        $this->loadDefaultProject();
+
+        // shows the command line
+        if (! $this->interactiveMode)
+        {
+            // just execution of that command (UNIX CLI)
+            $params = $arguments;
+            $command = array_shift($params);
+            $hasToExit = self::handleCommand($command, $params);
+        }
+        else
+        {
+            // interactive mode
+            while (TRUE)
+            {
+                // reload it in case was changed
+                $ot = $this->getOptionsTree();
+
+                // if passed all commands in command line as arguments
+                $c->clearCurrentBuffer();
+                $c->out($this->getPrompt());
+                $callback = $c->getMultiChoice($ot);
+                if ($callback !== NULL)
+                {
+                    call_user_func($callback);
+                }
+                else
+                {
+                    $c->outl();
+                }
+            }
+        }
+
+    }
+
+    public function getOptionsTree()
+    {
+        $projectCommandManager = $this->getProjectCommandManager();
+        $fileCommandManager = $this->getFileCommandManager();
+        $classCommandManager = $this->getClassCommandManager();
+        $methodCommandManager = $this->getMethodCommandManager();
+
+        // load commands from the own command managers
+        $optionsTree['project'] = $projectCommandManager->getOptions();
+        $optionsTree['file'] = $fileCommandManager->getOptions();
+        $optionsTree['class'] = $classCommandManager->getOptions();
+        $optionsTree['method'] = $methodCommandManager->getOptions();
+
+        // load generic options
+        $optionsTree['help'] = array(
+            'phoenix' => array($this, 'showHelp'),
+            '' => array($this, 'showHelp'),
+            'project' => array($projectCommandManager, 'getHelp'),
+            'file' => array($fileCommandManager, 'getHelp'),
+            'class' => array($classCommandManager, 'getHelp'),
+            'method' => array($methodCommandManager, 'getHelp'),
+        );
+        $optionsTree['quit'] = array(
+            'program' => array($this, 'quit'),
+        );
+
+        return $optionsTree;
+    }
+
+    protected function quit()
+    {
+        $c = Console::i();
+        $c->outl();
+        die();
+    }
+
+    protected function getPrompt() 
+    {
+        $c = Console::i();
+        return $c->color('gray') . "-" . str_repeat('=-', 39) . "\n" . $c->color('white', 'dark') . self::COMMAND_LINE_PROMPT . $c->color();
+    }
+
+    private $projectCommandManager;
+    private $fileCommandManager;
+    private $classCommandManager;
+    private $methodCommandManager;
+
+    public function showHelp()
+    {
+        $c = Console::i();
+        $c->outl();
+        $helpMessage = "" . 
+            $c->color('gray') .
+            "--------------------------------------------------------------------------------\n" .
+            $c->color() .
+            " Usage: " . $c->color('cyan') . "phoenix <command> <args>" . $c->color() . "\n" .
+            $c->color('gray') .
+            "--------------------------------------------------------------------------------\n" .
+            $c->color() .
+            "                                                                                \n" .
+            " Available commands:                                                            \n" .
+            "                                                                                \n" .
+            "       (" . $c->color('cyan') . "project" . $c->color() . ")           Handles everything related to the projects.   \n" .
+            "                           The current project can be specified with this\n" .
+            "                           command and also their statistics.            \n" .
+            "                                                                                \n" .
+            "       (" . $c->color('cyan') . "file" . $c->color() . ")              Allows commands over files in the current     \n" .
+            "                           project. Add, list or index them.             \n" .
+            "                                                                                \n" .
+            "       (" . $c->color('cyan') . "class" . $c->color() . ")             Permits a list of the classes, with their     \n" .
+            "                           hierarchy, a list of the methods of an        \n" .
+            "                           specific class and statistics.                \n" .
+            "                                                                                \n" .
+            "       (" . $c->color('cyan') . "method" . $c->color() . ")            Allows to gather information from one specific\n" .
+            "                           method, or list all of them that matches a    \n" .
+            "                           pattern.                                      \n" .
+            "                                                                                \n" .
+            "                                                                                \n" .
+            " Write '" . $c->color('cyan') . "help <command>" . $c->color() . "' to see more options for using them. \n" .
+            "                                                                                \n" .
+            $c->color('gray') .
+            "--------------------------------------------------------------------------------";
+        $c->outl($helpMessage);
+        $c->clearCurrentBuffer();
+    }
+
+    public function getProjectCommandManager()
+    {
+        if ($this->projectCommandManager === NULL)
+        {
+            $this->projectCommandManager =  new ProjectCommandManager();
+        }
+        return $this->projectCommandManager;
+    }
+    public function getFileCommandManager()
+    {
+        if ($this->fileCommandManager === NULL)
+        {
+            $this->fileCommandManager =  new FileCommandManager();
+        }
+        return $this->fileCommandManager;
+    }
+    public function getClassCommandManager()
+    {
+        if ($this->classCommandManager === NULL)
+        {
+            $this->classCommandManager =  new ClassCommandManager();
+        }
+        return $this->classCommandManager;
+    }
+    public function getMethodCommandManager()
+    {
+        if ($this->methodCommandManager === NULL)
+        {
+            $this->methodCommandManager =  new MethodCommandManager();
+        }
+        return $this->methodCommandManager;
+    }
+}
+
+class UnknownTypeOfConfigOptionException extends BaseException
+{
+}
+
+
+CommandLineProgram::main('\Phoenix\PhoenixCommandLineProgram', $argv);
+

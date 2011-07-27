@@ -107,20 +107,12 @@ class CoolestTaskManagerProgram extends CommandLineProgram
         while (TRUE)
         {
             $c->out($this->getPrompt());
-            $action = $c->getChoice(array_keys($ot));
-            if ($action !== NULL)
+            $callback = $c->getMultiChoice($ot);
+
+            if ($callback !== NULL)
             {
-                $c->out(" ");
-                $element = $c->getChoice(array_keys($ot[$action]));
-                if ($element !== NULL)
-                {
-                    $c->outl();
-                    call_user_func($ot[$action][$element]);
-                }
-                else
-                {
-                    $c->outl();
-                }
+                $c->outl();
+                call_user_func($callback);
             }
             else
             {
